@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
@@ -18,6 +19,7 @@ type problem struct {
 func main() {
 	csvFilename := flag.String("csv", "promlems.csv", "a csv file in the format of 'question'answer'")
 	timeLimit := flag.Int("limit", 30, "the limit for the quiz in seconds")
+	shuffle := flag.Bool("shuffle", true, "indicates rather string be shuffled")
 	flag.Parse()
 
 	file, err := os.Open(*csvFilename)
@@ -33,10 +35,17 @@ func main() {
 
 	timer := time.NewTicker(time.Duration(*timeLimit) * time.Second)
 	correct := 0
+	solved := make([]bool, len(problems))
+	solvedCount := 0
+	idx := 0
+	if *shuffle {
+		rand.Seed(time.Now().Unix())
+		idx = rand.Int() % len(problems)
+	}
 
 loop:
-	for i, p := range problems {
-		fmt.Printf("Problem #%d: %s = ", i+1, p.question)
+	for solvedCount < len(problems) {
+		fmt.Printf("Problem #%d: %s = ", idx+1, problems[idx].question)
 		answerCh := make(chan int)
 		go func() {
 			var answer string
@@ -49,9 +58,15 @@ loop:
 			fmt.Println()
 			break loop
 		case answer := <-answerCh:
-			fmt.Println(answer)
-			if answer == p.answer {
+			if answer == problems[idx].answer {
+				solved[idx] = true
 				correct++
+			}
+			if *shuffle {
+				for idx = rand.Int() % len(problems); solved[idx]; {
+				}
+			} else {
+				idx++
 			}
 		}
 
