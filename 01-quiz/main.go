@@ -5,13 +5,14 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
 
 type problem struct {
 	question string
-	answer   string
+	answer   int
 }
 
 func main() {
@@ -36,11 +37,11 @@ func main() {
 loop:
 	for i, p := range problems {
 		fmt.Printf("Problem #%d: %s = ", i+1, p.question)
-		answerCh := make(chan string)
+		answerCh := make(chan int)
 		go func() {
 			var answer string
 			fmt.Scanf("%s\n", &answer)
-			answerCh <- answer
+			answerCh <- parseAnswer(answer)
 		}()
 
 		select {
@@ -48,6 +49,7 @@ loop:
 			fmt.Println()
 			break loop
 		case answer := <-answerCh:
+			fmt.Println(answer)
 			if answer == p.answer {
 				correct++
 			}
@@ -63,9 +65,15 @@ func parseLines(lines [][]string) []problem {
 	for i, line := range lines {
 		ret[i] = problem{
 			question: line[0],
-			answer:   strings.TrimSpace(line[1]),
+			answer:   parseAnswer(line[1]),
 		}
 	}
+	return ret
+}
+
+func parseAnswer(answer string) int {
+	trimed := strings.Trim(answer, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+~{}[]:\"';-=,.<>/\\|`")
+	ret, _ := strconv.Atoi(trimed)
 	return ret
 }
 
